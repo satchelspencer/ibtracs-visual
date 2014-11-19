@@ -150,11 +150,12 @@
 				var con = canvas.getContext("2d");
 				con.clearRect(0,0,width,height);
 				con.lineWidth = 0;
-				con.fillStyle = 'rgba(255,0,0,0.5)';
+				con.fillStyle = 'rgba(200,0,0,0.6)';
 				for(var x=0;x<storms.length;x++){
 					dat = storms[x];
 					con.beginPath();
-					con.arc(lo2frac(parseFloat(dat[3]))*width, la2frac(parseFloat(dat[2]))*height, 3, 0, 2*Math.PI, false);
+					var r = (((parseFloat(dat[4])+65)/165)*10)+1
+					con.arc(lo2frac(parseFloat(dat[3]))*width, la2frac(parseFloat(dat[2]))*height, r, 0, 2*Math.PI, false);
       				con.fill();
 				}
 			}
@@ -170,11 +171,16 @@
 				for(j=0;j<9;j++) dec.appendChild(element(false, "div", j==8?"year sans":"year"));
 				return dec;
 			}
+			function ws2rad(ws){
+				
+			}
 			function la2frac(lat){
-				return ((-1*lat)+90)/180;
+				//return ((-1*lat)+90)/180;
+				return ((-1*lat)+50)/50;
 			}
 			function lo2frac(lon){
-				return (lon+180)/360;
+				//return (lon+180)/360;
+				return (lon+110)/100
 			}
 			function date2frac(date){
 				return ((parseInt(date.split("-")[0])+(parseInt(date.split("-")[1])/12))-1880)/130;
@@ -215,7 +221,7 @@
 		<style type="text/css">
 			body{font-family:"Roboto";font-size:16px;color:white;margin:0;padding:0;overflow:hidden;}
 			div{position:absolute;-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;}
-			#map{background:url(i/8.png);background-size:cover;}
+			#map{background:url(i/ath.png);background-size:cover;}
 				.storm{
 					width:2px;
 					height:2px;
