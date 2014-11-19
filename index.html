@@ -6,9 +6,11 @@
 		<script type="text/javascript">
 			var map;
 			var canvas;
+			var graph;
 			window.onload = function(){
 				map = $("#map");
 				canvas = $("#canvas");
+				graph = $("#graph");
 				fit();
 				for(i=0;i<13;i++) $("#timescale").appendChild(decade(i));
 				$("#framec").event("mousedown", function(e){
@@ -78,7 +80,7 @@
 						$("body").rmEvent("mousemove");
 					});
 				});
-				show();
+				setTimeout(function(){show()}, 300);
 			};
 			var storms = [];
 			var ostorms = [];
@@ -90,6 +92,7 @@
 				}
 			});
 			var gtemp = [];
+			var otemp = [];
 			ajax("data/gtemp.csv", "", false, function(d){
 				var st = d.split("\n");
 				for(var i=0;i<st.length;i++){
@@ -98,7 +101,13 @@
 				}
 			});
 			function getTemp(start, end){
-				
+				tmp = [];
+				for(var i=0;i<gtemp.length;i++){
+					var date = gtemp[i][0];
+					var year = parseInt(date.split("-")[0])+(parseInt(date.split("-")[1])/12);
+					if(year >= start && year <= end) tmp.push(gtemp[i]);
+				}
+				otemp = tmp;
 			}
 			function getStorms(start, end){
 				sto = [];
@@ -116,8 +125,24 @@
 				var start = Math.round(((l/width)*130)+1880);
 				var end = Math.round(((r/width)*130)+1880);
 				$("#date").innerHTML = start+" - "+end;
+				$("#stormcount").innerHTML = ostorms.length+" storms"
 				getStorms(start, end);
+				getTemp(start, end);
 				draw(ostorms);
+				tgraph(otemp);
+			}
+			function tgraph(temp){
+				var width = $("#controls").cssn("width");
+				var con = graph.getContext("2d");
+				con.clearRect(0,0,width,70);
+				con.lineWidth = 0;
+				con.fillStyle = 'rgba(0,0,0,0.5)';
+				for(var x=0;x<temp.length;x++){
+					dat = temp[x];
+					con.beginPath();
+					con.arc(date2frac(dat[0])*width, temp2frac(dat[1])*70, 1, 0, 2*Math.PI, false);
+      				con.fill();
+				}
 			}
 			function draw(storms){
 				var width = canvas.attr("width");
@@ -151,6 +176,12 @@
 			function lo2frac(lon){
 				return (lon+180)/360;
 			}
+			function date2frac(date){
+				return ((parseInt(date.split("-")[0])+(parseInt(date.split("-")[1])/12))-1880)/130;
+			}
+			function temp2frac(temp){
+				return (1.5-parseFloat(temp))/3.7;
+			}
 			window.onresize = fit;
 			function fit(){
 				var vw = $("body").viewWidth;
@@ -175,6 +206,8 @@
 					map.css("marginLeft", "-"+vh+"px");
 					map.css("marginTop", "0");
 				}
+				graph.attr("width", vw);
+				tgraph(otemp);
 				draw(ostorms);
 			}
 		</script>
@@ -199,6 +232,11 @@
 				top: 0;
 				font-size: 30px;
 				left: 5px;
+			}
+			#stormcount{
+				top: 2px;
+				font-size: 20px;
+				left: 180px;
 			}
 			#controls{
 				bottom:0;
@@ -281,6 +319,7 @@
 			 <canvas id="canvas"></canvas>
 		</div>
 		<div id="controls">
+			<canvas id="graph" height="70"></canvas>
 			<div id="timescale">
 			</div>
 			<div id="framel"></div>
@@ -291,5 +330,6 @@
 			<div id="framer"></div>
 		</div>
 		<div id="date"></div>
+		<div id="stormcount"></div>
 	</body>
 </html>

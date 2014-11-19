@@ -38,3 +38,4 @@ for line in i:
 	if(hcount > 0):
 		o.write(date+","+str(float(line.split(",")[1])-avg)+","+str(hcount)+"\n")
 o.flush()
+#1873/1424 = pos/neg
