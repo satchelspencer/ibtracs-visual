@@ -80,7 +80,26 @@
 						$("body").rmEvent("mousemove");
 					});
 				});
-				setTimeout(function(){show()}, 300);
+				canvas.event("mousemove", function(e){
+					var cx = e.x-canvas.x();
+					var cy = e.y-canvas.y();
+					if(!sprites.length) return false;
+					var selstorm = false;
+					for(var i=0;i<sprites.length;i++){
+						if(Math.pow(cx-sprites[i][0], 2)+Math.pow(cy-sprites[i][1], 2) < Math.pow(sprites[i][2], 2)){
+							selstorm = i;
+						}
+					}
+					if(selstorm !== false){
+						$("#stormlabel").innerHTML = (ostorms[selstorm][0]=="UNNAMED"?"":ostorms[selstorm][0]+" ")+ostorms[selstorm][1].split("-")[0];
+						var left = sprites[selstorm][0]+sprites[selstorm][2]+3;
+						$("#stormlabel").css("left", left+"px");
+						$("#stormlabel").css("top", (sprites[selstorm][1]-10)+"px");
+						$("#stormlabel").css("display", "block");
+					}else{
+						$("#stormlabel").css("display", "none");
+					}
+				});
 			};
 			var storms = [];
 			var ostorms = [];
@@ -144,19 +163,24 @@
       				con.fill();
 				}
 			}
+			var sprites = []
 			function draw(storms){
 				var width = canvas.attr("width");
 				var height = canvas.attr("height");
 				var con = canvas.getContext("2d");
 				con.clearRect(0,0,width,height);
+				sprites = []
 				con.lineWidth = 0;
 				con.fillStyle = 'rgba(200,0,0,0.6)';
 				for(var x=0;x<storms.length;x++){
 					dat = storms[x];
 					con.beginPath();
+					var cx = lo2frac(parseFloat(dat[3]))*width;
+					var cy = la2frac(parseFloat(dat[2]))*height;
 					var r = (((parseFloat(dat[4])+65)/165)*10)+1
-					con.arc(lo2frac(parseFloat(dat[3]))*width, la2frac(parseFloat(dat[2]))*height, r, 0, 2*Math.PI, false);
+					con.arc(cx, cy, r, 0, 2*Math.PI, false);
       				con.fill();
+      				sprites.push([cx, cy, r]);
 				}
 			}
 			function decade(i){
@@ -244,6 +268,13 @@
 				font-size: 20px;
 				left: 180px;
 			}
+			#stormlabel{
+				height: 20px;
+				width: auto;
+				white-space: nowrap;
+				font-size: 15px;
+				padding: 0px 3px;
+			}
 			#controls{
 				bottom:0;
 				left:0;
@@ -323,6 +354,7 @@
 	<body>
 		<div id="map">
 			 <canvas id="canvas"></canvas>
+			 <div id="stormlabel"></div>
 		</div>
 		<div id="controls">
 			<canvas id="graph" height="70"></canvas>
