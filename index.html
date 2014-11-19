@@ -1,0 +1,295 @@
+<!doctype html>
+<html>
+	<head>	
+		<title>atoc</title>
+		<script type="text/javascript" src="lib.js"></script>
+		<script type="text/javascript">
+			var map;
+			var canvas;
+			window.onload = function(){
+				map = $("#map");
+				canvas = $("#canvas");
+				fit();
+				for(i=0;i<13;i++) $("#timescale").appendChild(decade(i));
+				$("#framec").event("mousedown", function(e){
+					if(e.el.id != "framec") return false;
+					var initx = e.x;
+					var pwidth = $("#controls").cssn("width");
+					var initl = $("#framec").x();
+					var initr = pwidth-(initl+$("#framec").offsetWidth);
+					$("body").event("mousemove", function(me){
+						var d = initx-me.x;
+						var left = (((initl-d)/pwidth)*100);
+						var right = (((initr+d)/pwidth)*100);
+						left = left<0?0:left;
+						right = right<0?0:right;
+						$("#framec").css("left", left+"%");
+						$("#framec").css("right", right+"%");
+						$("#framel").css("width", left+"%");
+						$("#framer").css("width", right+"%");
+						$("#framec").css("cursor", "-webkit-grabbing");
+						show();
+					});
+					$("body").event("mouseup", function(){
+						$("#framec").css("cursor", "-webkit-grab");
+						$("body").rmEvent("mouseup");
+						$("body").rmEvent("mousemove");
+					});
+				});
+				$("#rresize").event("mousedown", function(e){
+					var initx = e.x;
+					var pwidth = $("#controls").cssn("width");
+					var initr = pwidth-($("#framec").x()+$("#framec").offsetWidth);
+					$("body").event("mousemove", function(me){
+						var d = initx-me.x;
+						var right = (((initr+d)/pwidth)*100);
+						right = right<0?0:right;
+						$("#framec").css("right", right+"%");
+						$("#framer").css("width", right+"%");
+						$("#framec").css("cursor", "ew-resize");
+						$("#framer").css("cursor", "ew-resize");
+						show();
+					});
+					$("body").event("mouseup", function(){
+						$("#framec").css("cursor", "-webkit-grab");
+						$("#framer").css("cursor", "default");
+						$("body").rmEvent("mouseup");
+						$("body").rmEvent("mousemove");
+					});
+				});
+				$("#lresize").event("mousedown", function(e){
+					var initx = e.x;
+					var pwidth = $("#controls").cssn("width");
+					var initl = $("#framec").x();
+					$("body").event("mousemove", function(me){
+						var d = initx-me.x;
+						var left = (((initl-d)/pwidth)*100);
+						left = left<0?0:left;
+						$("#framec").css("left", left+"%");
+						$("#framel").css("width", left+"%");
+						$("#framec").css("cursor", "ew-resize");
+						$("#framel").css("cursor", "ew-resize");
+						show();
+					});
+					$("body").event("mouseup", function(){
+						$("#framec").css("cursor", "-webkit-grab");
+						$("#framel").css("cursor", "default");
+						$("body").rmEvent("mouseup");
+						$("body").rmEvent("mousemove");
+					});
+				});
+				show();
+			};
+			var storms = [];
+			var ostorms = [];
+			ajax("data/storms.csv", "", false, function(d){
+				var st = d.split("\n");
+				for(var i=0;i<st.length;i++){
+					var dat = st[i].split(",");
+					storms.push(dat);
+				}
+			});
+			var gtemp = [];
+			ajax("data/gtemp.csv", "", false, function(d){
+				var st = d.split("\n");
+				for(var i=0;i<st.length;i++){
+					var dat = st[i].split(",");
+					gtemp.push(dat);
+				}
+			});
+			function getTemp(start, end){
+				
+			}
+			function getStorms(start, end){
+				sto = [];
+				for(var i=0;i<storms.length;i++){
+					var date = storms[i][1];
+					var year = parseInt(date.split("-")[0])+(parseInt(date.split("-")[1])/12);
+					if(year >= start && year <= end) sto.push(storms[i]);
+				}
+				ostorms = sto;
+			}
+			function show(){
+				var width = $("#controls").cssn("width");
+				var l = $("#framec").x();
+				var r = l+$("#framec").offsetWidth;
+				var start = Math.round(((l/width)*130)+1880);
+				var end = Math.round(((r/width)*130)+1880);
+				$("#date").innerHTML = start+" - "+end;
+				getStorms(start, end);
+				draw(ostorms);
+			}
+			function draw(storms){
+				var width = canvas.attr("width");
+				var height = canvas.attr("height");
+				var con = canvas.getContext("2d");
+				con.clearRect(0,0,width,height);
+				con.lineWidth = 0;
+				con.fillStyle = 'rgba(255,0,0,0.5)';
+				for(var x=0;x<storms.length;x++){
+					dat = storms[x];
+					con.beginPath();
+					con.arc(lo2frac(parseFloat(dat[3]))*width, la2frac(parseFloat(dat[2]))*height, 3, 0, 2*Math.PI, false);
+      				con.fill();
+				}
+			}
+			function decade(i){
+				var dec = element(false, "div", i==12?"decade sans":"decade");
+				dec.year = 1880+(10*i);
+				dec.event("mouseover", function(e){
+					//e.el.innerHTML = e.el.year;
+				});
+				dec.event("mouseout", function(e){
+					//e.el.innerHTML = "";
+				});
+				for(j=0;j<9;j++) dec.appendChild(element(false, "div", j==8?"year sans":"year"));
+				return dec;
+			}
+			function la2frac(lat){
+				return ((-1*lat)+90)/180;
+			}
+			function lo2frac(lon){
+				return (lon+180)/360;
+			}
+			window.onresize = fit;
+			function fit(){
+				var vw = $("body").viewWidth;
+				var vh = $("body").viewHeight-70
+				var r = vw/vh;
+				if(r > 2){
+					map.css("width", vw+"px");
+					map.css("height", (vw/2)+"px");
+					canvas.attr("width", vw);
+					canvas.attr("height", vw/2);
+					map.css("left", "0");
+					map.css("top", "50%");
+					map.css("marginTop", "-"+(vw/4)+"px");
+					map.css("marginLeft", "0");
+				}else{
+					map.css("height", vh+"px");
+					map.css("width", (vh*2)+"px");
+					canvas.attr("height", vh);
+					canvas.attr("width", vh*2);
+					map.css("top", "0");
+					map.css("left", "50%");
+					map.css("marginLeft", "-"+vh+"px");
+					map.css("marginTop", "0");
+				}
+				draw(ostorms);
+			}
+		</script>
+		<link href='http://fonts.googleapis.com/css?family=Roboto:100' rel='stylesheet' type='text/css'>
+		<style type="text/css">
+			body{font-family:"Roboto";font-size:16px;color:white;margin:0;padding:0;overflow:hidden;}
+			div{position:absolute;-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;}
+			#map{background:url(i/8.png);background-size:cover;}
+				.storm{
+					width:2px;
+					height:2px;
+					background:rgba(200,0,0,0.9);
+					border-radius:2px;
+				}
+				#canvas{
+					top:0;
+					left:0;
+					right:0;
+					bottom:0;
+				}
+			#date{
+				top: 0;
+				font-size: 30px;
+				left: 5px;
+			}
+			#controls{
+				bottom:0;
+				left:0;
+				right:0;
+				height:70px;
+				background:#C3C2C2;
+				box-shadow: 2px 0px 4px 2px rgba(0, 0, 0, 0.68);
+				overflow:hidden;
+			}
+				#framel{
+					top: 0;
+					left: 0;
+					bottom: 0;
+					width: 30%;
+					background: rgba(240, 241, 255, 0.38);
+				}
+				#framer{
+					top: 0;
+					right: 0;
+					bottom: 0;
+					width: 30%;
+					background: rgba(240, 241, 255, 0.38);
+				}
+				#framec{
+					top: -5px;
+					bottom: -5px;
+					left: 30%;
+					right: 30%;
+					box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.5);
+					cursor: -webkit-grab;
+				}
+					#lresize{
+						top:0;
+						left:0;
+						bottom:0;
+						width:5px;
+						cursor:ew-resize;
+					}
+					#rresize{
+						top:0;
+						right:0;
+						bottom:0;
+						width:5px;
+						cursor:ew-resize;
+					}
+				#timescale{
+					top:0;
+					left:0;
+					bottom:0;
+					right:0;
+				}
+					.decade{
+						float:left;
+						position:relative;
+						width:7.6923%;
+						height:60px;
+						margin-top:5px;
+						border-right:1px solid rgb(149, 149, 149);
+						text-align: center;
+						padding-top: 18px;
+						color: rgb(120, 120, 120);
+					}
+					.sans{
+						border-right:none;
+					}
+						.year{
+							float:left;
+							position:relative;
+							width:10%;
+							height:20px;
+							margin-top: 3px;
+							border-right: 1px solid rgb(169, 169, 169);
+							color: rgb(120, 120, 120);
+						}
+		</style>
+	</head>
+	<body>
+		<div id="map">
+			 <canvas id="canvas"></canvas>
+		</div>
+		<div id="controls">
+			<div id="timescale">
+			</div>
+			<div id="framel"></div>
+			<div id="framec">
+				<div id="rresize"></div>
+				<div id="lresize"></div>
+			</div>
+			<div id="framer"></div>
+		</div>
+		<div id="date"></div>
+	</body>
+</html>
